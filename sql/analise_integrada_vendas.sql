@@ -34,3 +34,33 @@ SELECT
 FROM vendas_excel
 GROUP BY DATE_FORMAT(Data, '%Y-%m')
 ORDER BY mes;
+
+-- 17. Participação percentual dos produtos no faturamento
+
+SELECT
+    Produto,
+    ROUND(SUM(Valor_Total), 2) AS faturamento_total,
+    ROUND(
+        100.0 * SUM(Valor_Total) /
+        (SELECT SUM(Valor_Total) FROM vendas_excel),
+        2
+    ) AS percentual_faturamento
+FROM vendas_excel
+GROUP BY Produto
+ORDER BY faturamento_total DESC;
+
+
+-- 16. Ranking de produtos por faturamento
+USE analise_vendas;
+
+SELECT
+    Produto,
+    SUM(Quantidade) AS unidades_vendidas,
+    COUNT(*) AS quantidade_vendas,
+    ROUND(SUM(Valor_Total), 2) AS faturamento_total,
+    RANK() OVER (
+        ORDER BY SUM(Valor_Total) DESC
+    ) AS ranking_faturamento
+FROM vendas_excel
+GROUP BY Produto
+ORDER BY faturamento_total DESC;
