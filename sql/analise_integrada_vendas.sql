@@ -64,3 +64,35 @@ SELECT
 FROM vendas_excel
 GROUP BY Produto
 ORDER BY faturamento_total DESC;
+
+
+-- 18. Evolução mensal e variacao do faturamento
+
+USE analise_vendas;
+
+WITH faturamento_mensal AS (
+    SELECT
+        DATE_FORMAT(Data, '%Y-%m') AS mes,
+        SUM(Valor_Total) AS faturamento
+    FROM vendas_excel
+    GROUP BY DATE_FORMAT(Data, '%Y-%m')
+),
+comparacao AS (
+    SELECT
+        mes,
+        faturamento,
+        LAG(faturamento) OVER (ORDER BY mes) AS faturamento_mes_anterior
+    FROM faturamento_mensal
+)
+SELECT
+    mes,
+    ROUND(faturamento, 2) AS faturamento,
+    ROUND(faturamento_mes_anterior, 2) AS faturamento_mes_anterior,
+    ROUND(faturamento - faturamento_mes_anterior, 2) AS variacao_valor,
+    ROUND(
+        100.0 * (faturamento - faturamento_mes_anterior)
+        / NULLIF(faturamento_mes_anterior, 0),
+        2
+    ) AS variacao_percentual
+FROM comparacao
+ORDER BY mes;
