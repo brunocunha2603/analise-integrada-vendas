@@ -96,3 +96,43 @@ SELECT
     ) AS variacao_percentual
 FROM comparacao
 ORDER BY mes;
+
+
+-- 19. Analise de Pareto: participacao acumulada por produto
+
+USE analise_vendas;
+
+WITH faturamento_produto AS (
+    SELECT
+        Produto,
+        SUM(Valor_Total) AS faturamento
+    FROM vendas_excel
+    GROUP BY Produto
+),
+pareto AS (
+    SELECT
+        Produto,
+        faturamento,
+        SUM(faturamento) OVER (
+            ORDER BY faturamento DESC
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS faturamento_acumulado,
+        SUM(faturamento) OVER () AS faturamento_total
+    FROM faturamento_produto
+)
+SELECT
+    Produto,
+    ROUND(faturamento, 2) AS faturamento,
+    ROUND(
+        100.0 * faturamento / faturamento_total, 2
+    ) AS percentual_individual,
+    ROUND(
+        100.0 * faturamento_acumulado / faturamento_total, 2
+    ) AS percentual_acumulado,
+    CASE
+        WHEN faturamento_acumulado / faturamento_total <= 0.80
+            THEN 'Dentro dos 80%'
+        ELSE 'Após os 80%'
+    END AS faixa_pareto
+FROM pareto
+ORDER BY faturamento DESC;
